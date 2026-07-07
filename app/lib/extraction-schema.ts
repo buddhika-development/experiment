@@ -218,6 +218,12 @@ const personalItem = z.object({
 });
 
 export const personalInformationSchema = z.object({
+  summary: z
+    .string()
+    .nullable()
+    .describe(
+      "An evolving 2-4 sentence third-person portrait of the user, e.g. 'A 52-year-old biology teacher living in Colombo…'. Re-evaluate it on EVERY turn: start from the previous summary, weave in what was newly learned (life context, preferences, recurring health patterns), and drop anything the user corrected. Null only when nothing personal is known yet."
+    ),
   likes: z
     .array(personalItem)
     .describe(
@@ -256,7 +262,8 @@ Journal structure rules:
 Personal information rules:
 - likes / dislikes: preferences the user states or clearly implies ("I love my garden" -> likes; "I hate crowded buses" -> dislikes).
 - other_details: any other personal fact worth remembering across sessions (name, family, pets, job, routines, ongoing situations).
-- Keep each description short and self-contained.`;
+- Keep each description short and self-contained.
+- summary: re-evaluate the whole picture of the user every turn. Rewrite the previous summary so it stays a coherent 2-4 sentence portrait: fold in new facts and preferences, keep still-valid older ones, and remove anything the user corrected. Write it in warm, plain third person.`;
 
 /**
  * The model emits metadata.reasoning as nullable; normalize each metadata to a

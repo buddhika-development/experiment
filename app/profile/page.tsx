@@ -217,6 +217,19 @@ export default function ProfilePage() {
               {session.conversation.length === 1 ? "" : "s"} in the conversation
             </p>
 
+            <Card title="About you">
+              {personal?.summary ? (
+                <p className="text-sm leading-7 text-zinc-800">
+                  {personal.summary}
+                </p>
+              ) : (
+                <p className="text-sm text-zinc-400">
+                  No summary yet — it builds up as you chat and is re-evaluated
+                  with every message.
+                </p>
+              )}
+            </Card>
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <Card title="Likes 💜">
                 <PersonalList

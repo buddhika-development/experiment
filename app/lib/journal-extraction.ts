@@ -112,6 +112,8 @@ export interface PersonalItem extends Attribution {
 }
 
 export interface PersonalInformation {
+  /** Evolving short portrait of the user, re-evaluated by the LLM each turn. */
+  summary: string | null;
   likes: PersonalItem[];
   dislikes: PersonalItem[];
   other_details: PersonalItem[];
