@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Purple range slider with filled track */
+.range-purple {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    #7c3aed 0%,
+    #7c3aed var(--fill, 50%),
+    #ede9fe var(--fill, 50%),
+    #ede9fe 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.range-purple::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 9999px;
+  background: #6d28d9;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.range-purple::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 9999px;
+  background: #6d28d9;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Voice orb animations */
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.orb-breathe {
+  animation: orb-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes orb-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.orb-ring {
+  animation: orb-ring 2.1s ease-out infinite;
+}
+
+@keyframes eq-bar {
+  0%,
+  100% {
+    height: 30%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+.eq-bar {
+  height: 30%;
+  animation: eq-bar 0.9s ease-in-out infinite;
+}
+
+@keyframes thinking-dot {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
+.thinking-dot {
+  animation: thinking-dot 1s ease-in-out infinite;
+}
