@@ -211,7 +211,9 @@ export const journalInformationSchema = z.object({
 const personalItem = z.object({
   description: z
     .string()
-    .describe("Short third-person fact, e.g. 'Enjoys morning walks by the beach'."),
+    .describe(
+      "Short, specific third-person fact with clear health relevance, e.g. 'Drinks 3 cups of coffee daily, the last one around 4pm'. Skip anything vague or medically inconsequential."
+    ),
   provider,
   confidence,
   metadata,
@@ -222,22 +224,22 @@ export const personalInformationSchema = z.object({
     .string()
     .nullable()
     .describe(
-      "An evolving 2-4 sentence third-person portrait of the user, e.g. 'A 52-year-old biology teacher living in Colombo…'. Re-evaluate it on EVERY turn: start from the previous summary, weave in what was newly learned (life context, preferences, recurring health patterns), and drop anything the user corrected. Null only when nothing personal is known yet."
+      "An evolving 2-4 sentence third-person clinical portrait of the user, e.g. 'A 52-year-old teacher, 8 months into perimenopause. Sleeps poorly on nights she drinks wine, and her hot flashes cluster around work deadlines.' Focus on what a clinician would want to know: age and menopause stage, diagnoses, medications, and recurring health or lifestyle patterns. Mention day-to-day life only where it plausibly bears on her health. Re-evaluate on EVERY turn: start from the previous summary, fold in newly learned medically relevant facts, and drop anything the user corrected. Null when nothing of medical value is known yet."
     ),
   likes: z
     .array(personalItem)
     .describe(
-      "Things the user likes or enjoys (foods, activities, hobbies, people, routines). Carry forward previously captured items and avoid duplicates."
+      "Only preferences with plausible health relevance: foods, drinks, substances, exercise, sleep habits, or activities that could affect symptoms. Ignore preferences with no medical bearing (favourite film, colour, sports team). Carry forward previously captured items and avoid duplicates."
     ),
   dislikes: z
     .array(personalItem)
     .describe(
-      "Things the user dislikes, avoids, or that bother them. Carry forward previously captured items and avoid duplicates."
+      "Only aversions with plausible health relevance: foods or substances avoided, triggers, intolerable environments, activities she avoids because of symptoms. Ignore medically inconsequential dislikes. Carry forward previously captured items and avoid duplicates."
     ),
   other_details: z
     .array(personalItem)
     .describe(
-      "Other personal facts worth remembering that are not likes/dislikes: name, family, pets, work, habits, health context, goals. Carry forward and avoid duplicates."
+      "Personal facts that carry medical value now or later: age, menopause stage, medications and supplements, diagnoses and past conditions, family medical history, allergies, surgeries, cycle details, diet, alcohol/caffeine/smoking habits, exercise, and recurring stressors or lifestyle patterns a clinician might connect to symptoms. Also keep the few identity facts needed to make sense of them (name, occupation or living situation when they shape her health). Do NOT store trivia, one-off chit-chat, or vague statements with no clinical meaning. Carry forward and avoid duplicates."
     ),
 });
 
@@ -260,10 +262,14 @@ Journal structure rules:
 - notes.additional_text captures leftover relevant context as a short first-person summary.
 
 Personal information rules:
-- likes / dislikes: preferences the user states or clearly implies ("I love my garden" -> likes; "I hate crowded buses" -> dislikes).
-- other_details: any other personal fact worth remembering across sessions (name, family, pets, job, routines, ongoing situations).
-- Keep each description short and self-contained.
-- summary: re-evaluate the whole picture of the user every turn. Rewrite the previous summary so it stays a coherent 2-4 sentence portrait: fold in new facts and preferences, keep still-valid older ones, and remove anything the user corrected. Write it in warm, plain third person.`;
+- Store personal information ONLY when it has medical value. Before writing any item, ask: could a clinician use this to explain, predict or treat her symptoms? If not, leave it out. An empty array is the correct answer for a turn of pure small talk.
+- Medically valuable means: age, menopause stage, medications and supplements, diagnoses and past conditions, family medical history, allergies, surgeries, cycle details, diet, alcohol/caffeine/smoking habits, exercise, sleep habits, and recurring stressors or lifestyle patterns that plausibly link to symptoms. Capture these even when mentioned in passing. Also keep the few identity facts needed to make sense of them (name, occupation or living situation when they shape her health).
+- Never store trivia or medically inconsequential chatter (favourite film, the weather, a nice meal out with no dietary detail), and never store vague statements that carry no usable meaning ("had a busy day", "things were fine"). Vagueness is not a reason to guess — drop it.
+- likes / dislikes: only preferences and aversions with plausible health relevance (foods, drinks, substances, exercise, symptom triggers, environments she avoids). Ordinary tastes with no medical bearing do not belong here.
+- other_details: the remaining medically valuable facts that are not preferences.
+- Record facts as they were said, without diagnosing or giving medical advice. If a medical detail is only implied, keep it as an ai_assistant inference with reasoning and lower confidence.
+- Keep each description short, specific and self-contained; prefer concrete detail ("2 glasses of wine most evenings") over a general impression ("drinks sometimes").
+- summary: a 2-4 sentence third-person clinical portrait, re-evaluated every turn. Lead with what matters medically — age and menopause stage, diagnoses, medications, recurring health and lifestyle patterns — and include everyday life only where it plausibly bears on her health. Fold in newly learned medically relevant facts, keep still-valid older ones, and remove anything the user corrected. Write it in warm, plain third person. Leave it null while nothing of medical value is known.`;
 
 /**
  * The model emits metadata.reasoning as nullable; normalize each metadata to a

@@ -1,8 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { ChatMessage, SessionExtraction } from "../lib/journal-extraction";
 import { loadSession, saveSession } from "../lib/session-store";
+import {
+  DEFAULT_SETTINGS,
+  describeSettings,
+  type ModelSettings,
+} from "../lib/model-settings";
+import { SETTINGS_CHANGED_EVENT, loadSettings } from "../lib/settings-store";
 
 const GREETING =
   "Hi! How was your day? How did you sleep, and were there any symptoms or other things that happened during the day or during your sleep? I am here with you, ready to help.";
@@ -165,6 +172,7 @@ export default function VoiceChat() {
   const [error, setError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [edited, setEdited] = useState(false);
+  const [settings, setSettings] = useState<ModelSettings>(DEFAULT_SETTINGS);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const sessionActiveRef = useRef(false); // user pressed start and hasn't stopped
@@ -175,6 +183,7 @@ export default function VoiceChat() {
   const extractionRef = useRef<SessionExtraction | null>(null);
   const conversationRef = useRef<ChatMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const settingsRef = useRef<ModelSettings>(DEFAULT_SETTINGS); // read at send time
 
   /* ---------- persistence ---------- */
 
@@ -182,6 +191,10 @@ export default function VoiceChat() {
   // localStorage is only readable after hydration, so this must be an effect.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
+    const chosen = loadSettings();
+    settingsRef.current = chosen;
+    setSettings(chosen);
+
     const saved = loadSession();
     if (saved && saved.conversation.length > 0) {
       conversationRef.current = saved.conversation;
@@ -199,6 +212,22 @@ export default function VoiceChat() {
     setHydrated(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Pick up a service change made on the Settings page — in this tab (custom
+  // event) or another one (storage event) — without needing a reload.
+  useEffect(() => {
+    const sync = () => {
+      const chosen = loadSettings();
+      settingsRef.current = chosen;
+      setSettings(chosen);
+    };
+    window.addEventListener(SETTINGS_CHANGED_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(SETTINGS_CHANGED_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   const persist = useCallback(() => {
     saveSession({
@@ -389,6 +418,7 @@ export default function VoiceChat() {
               content,
             })),
             current_extraction: extractionRef.current,
+            settings: settingsRef.current,
           }),
         });
         if (!res.ok) {
@@ -574,9 +604,20 @@ export default function VoiceChat() {
       {/* Right — chatbot-style conversation */}
       <aside className="flex min-h-0 w-full flex-col border-t-2 border-violet-100 bg-violet-50/40 lg:w-[400px] lg:border-l-2 lg:border-t-0 xl:w-[440px]">
         <div className="border-b border-violet-100 bg-white/70 px-5 py-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-violet-700">
-            Conversation
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-violet-700">
+              Conversation
+            </h2>
+            {hydrated && (
+              <Link
+                href="/settings"
+                title="Change the AI service in Settings"
+                className="shrink-0 rounded-full bg-violet-100 px-2.5 py-0.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-200"
+              >
+                {describeSettings(settings)}
+              </Link>
+            )}
+          </div>
         </div>
 
         <div

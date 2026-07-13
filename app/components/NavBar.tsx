@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/", label: "Voice Chat" },
   { href: "/journal", label: "Daily Journal" },
   { href: "/profile", label: "My Info" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export default function NavBar() {

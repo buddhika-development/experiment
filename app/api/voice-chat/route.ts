@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getLlm } from "@/app/lib/llm";
+import { describeSettings, normalizeSettings } from "@/app/lib/model-settings";
 import {
   EXTRACTION_RULES,
   finalize,
@@ -47,6 +48,8 @@ const messageSchema = z.object({
 const requestSchema = z.object({
   messages: z.array(messageSchema).min(1),
   current_extraction: z.unknown().optional(),
+  /** Chosen LLM service from the client's Settings; re-validated by getLlm. */
+  settings: z.unknown().optional(),
 });
 
 /** Bound the prompt: the extraction state already summarizes older turns. */
@@ -68,7 +71,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { messages, current_extraction: currentExtraction } = parsed.data;
+  const {
+    messages,
+    current_extraction: currentExtraction,
+    settings,
+  } = parsed.data;
   if (messages[messages.length - 1].role !== "user") {
     return NextResponse.json(
       { error: "The last message must be from the user" },
@@ -80,8 +87,10 @@ export async function POST(request: NextRequest) {
     ? JSON.stringify(currentExtraction, null, 2)
     : "No information extracted yet — this is a fresh session.";
 
+  const active = normalizeSettings(settings);
+
   try {
-    const structuredLlm = getLlm().withStructuredOutput(chatResponseSchema, {
+    const structuredLlm = getLlm(active).withStructuredOutput(chatResponseSchema, {
       name: "voice_chat_turn",
     });
 
@@ -110,11 +119,21 @@ export async function POST(request: NextRequest) {
         },
         personal_information: result.personal_information,
       }),
+      // Echo what actually answered, so the UI can show the live service.
+      used: active,
     });
   } catch (error) {
-    console.error("voice-chat failed:", error);
+    console.error(`voice-chat failed (${active.provider}/${active.model}):`, error);
+
+    // A missing API key is a setup problem the user can fix in Settings —
+    // say so instead of hiding it behind a generic failure.
+    if (error instanceof Error && error.message.includes("is not set in .env")) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
     return NextResponse.json(
-      { error: "Failed to process the conversation" },
+      {
+        error: `Failed to process the conversation with ${describeSettings(active)}. Try again, or switch service in Settings.`,
+      },
       { status: 500 }
     );
   }
